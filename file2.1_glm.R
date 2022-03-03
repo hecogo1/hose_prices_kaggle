@@ -283,32 +283,38 @@ bar_chart(
 #        )
 # 
 # head(sub_df)
-# 
-# #---- END OF FILE ------------
-# #-- Results:
-# # 00 - ranger - 11 vars numeric - 71% local -> 0.7140 plataforma
-# # 01 - ranger - 31 vars numeric - 71% local -> 0.7140 plataforma
-
-# mymodel = "sale_price ~ overall_qual + gr_liv_area + garage_cars + total_bsmt_sf +
-#             garage_area + x1st_flr_sf + exter_qual + year_built + x2nd_flr_sf +
-#             kitchen_qual + bsmt_fin_sf1 + full_bath + year_remod_add + lot_area +
-#             fireplaces + tot_rms_abv_grd"
 
 
-varImp
-model1 <- glm(sale_price ~ overall_qual + gr_liv_area + garage_cars + total_bsmt_sf +
-                garage_area + x1st_flr_sf + exter_qual + year_built + x2nd_flr_sf +
-                kitchen_qual + bsmt_fin_sf1 + full_bath + year_remod_add + lot_area +
-                fireplaces + tot_rms_abv_grd + fireplaces + open_porch_sf + foundation +
-                neighborhood + bsmt_unf_sf + wood_deck_sf + heating_qc + bedroom_abv_gr + ms_sub_class +
-                half_bath + sale_condition + overall_cond,
-              data = datGdImpTrain)
+## H2o
+
+h2o.init()
+
+prostate_path <- system.file("extdata", "prostate.csv", package = "h2o")
+prostate <- h2o.importFile(path = prostate_path, header = TRUE)
+
+h2o.automl(x = mytrain,
+         y = mytrain$sale_price,
+         stopping_metric = "RMSLE",
+         training_frame = prostate,
+         project_name = 'house_prices_kaggle',
+         max_models = 15)
+
+x
+
+
+mytrain
+
+
+model1 <- glm(sale_price ~ .,
+              data = mytrain)
+
 
 
 #----- Submission 
 #-- Prediction
 pred_val <- predict(model1, newdata = datGdImpTest, type="response")
 
+pred_val
 
 #-- Prepare submission
 sub_df <- data.frame(
@@ -318,11 +324,11 @@ sub_df <- data.frame(
 
 #-- Save submission
 fwrite(sub_df, 
-       paste0("./submissions/file2_glm_vars_", nrow(varImp),
+       paste0("./submissions/file2.1_glm_vars_", nrow(varImp),
               "_acc_", round(accu_val,4), ".csv"), nThread = 3
 )
 
-
-
+sub_df
+## END OF FILE
 ## Random forest 1 submission score on platform: 0.15015 error
 ## GLM 2 submission score on platform: 0.14615 error <- better

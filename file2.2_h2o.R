@@ -206,67 +206,6 @@ datGdImpTrain %<>%
   mutate(sale_price = traintarget$sale_price)
 
 
-
-#---------------- MODEL --------------
-#--- Apply an algorithm - randomForest -> ranger!.
-#--  In ranger, "target" must be a factor!.
-tic()
-mytrain <- trainnumchargood
-mymodel <- ranger(
-  sale_price ~ .,
-  data      = mytrain,
-  num.trees = 500,
-  # To get variable importance
-  importance = "impurity" 
-)
-toc()
-
-#--- Estimated model error.
-error_val <- mymodel$prediction.error
-error_val
-accu_val <- 1 - error_val
-accu_val
-
-#--- Variable importance
-varImp <- mymodel$variable.importance %>%
-  as.data.frame()
-varImp   %<>%
-  mutate( vars = rownames(varImp)) %>%
-  arrange(-.)
-
-rownames(varImp) <- NULL
-names(varImp)[1] <- "Importance"
-varImp %<>%
-  arrange(-Importance)
-
-#--- Trampa, si hay una variable muy importante se está trayendo información de la target, cuidado con ello, está dopada.
-# varImp$Importance[1] <- 20000 - la importancia del modelo se saca del modelo
-
-#--- Chart Importance
-ggplot(varImp, aes(x = fct_reorder(vars, Importance), y = Importance, alpha = Importance)) +
-  geom_col( fill = "darkred") +
-  coord_flip() +
-  labs(
-    title = "Relative Variable Importance",
-    subtitle = paste("Accuracy: ", round(100*accu_val,2), "%", sep = ""), 
-    x = "Variables",
-    y = "Relative Importance",
-    caption = paste("model num vars: ", ncol(mytrain) ,sep = "") 
-  ) +
-  theme_bw()
-ggsave(paste("./charts/Variable_Importance_", ncol(mytrain), ".png", sep = ""))
-
-# Highligting most important one.
-library(ggcharts)
-bar_chart(
-  varImp,
-  vars,
-  Importance,
-  top_n = 30,
-  highlight = "longitude"
-)
-
-
 # #----- Submission 
 # #-- Prediction
 # pred_val <- predict( mymodel, data = datGdImpTest)$predictions
@@ -291,6 +230,12 @@ bar_chart(
 
 datGdImpTrain %<>% mutate_if(is.character, as.factor)
 datGdImpTest %<>% mutate_if(is.character, as.factor)
+
+
+
+## H2o Variables for csv name
+
+max_models <- 50
 
 
 ## ---------------H2o----------------------
@@ -319,13 +264,16 @@ response <- "sale_price"
 ##                                seed = 1234
 ##  )
 
+
+
 ## Auto ML - Esto es la leche
 automl <- h2o.automl(
                       y = response,
                       training_frame = train,
                       project_name = 'house_prices_kaggle',
-                      max_models = 15,
-                      seed = 1234
+                      max_models = max_models,
+                      seed = 1234,
+                      keep_cross_validation_predictions = TRUE # otherwise it returns an error with 100 models
                       )
 
 # Model name
@@ -370,8 +318,8 @@ sub_df <- data.frame(
 
 #-- Save submission
 fwrite(sub_df, 
-       paste0("./submissions/file2.2_H2O_AUTOML", nrow(varImp),
-              "_acc_", round(accu_val,4), ".csv"), nThread = 3
+       paste0("./submissions/file2.2_H2O_AUTOML_n_models_", max_model, ".csv"),
+       nThread = 3
 )
 
 # h2o.automl(x = mytrain,

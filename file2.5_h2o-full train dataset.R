@@ -235,12 +235,12 @@ datGdImpTest %<>% mutate_if(is.character, as.factor)
 
 ## H2o Variables for csv name
 
-max_models <- 50
+max_models <- 100
 
 
 ## ---------------H2o----------------------
 
-h2o.init(max_mem_size = "6g", nthreads = 4)
+h2o.init(max_mem_size = "8g", nthreads = 8)
 
 #Loading data as a h2o object
 train_hex <- as.h2o(datGdImpTrain)
@@ -269,12 +269,14 @@ response <- "sale_price"
 ## Auto ML - Esto es la leche
 automl <- h2o.automl(
                       y = response,
-                      training_frame = train,
+                      training_frame = train_hex,
                       project_name = 'house_prices_kaggle',
                       max_models = max_models,
                       seed = 1234,
+                      #exclude_algos = c("DeepLearning"),
                       keep_cross_validation_predictions = TRUE # otherwise it returns an error with 100 models
                       )
+
 
 # Model name
 H2Omodel_name <- as.character(automl@leaderboard[1, 1])
@@ -318,7 +320,7 @@ sub_df <- data.frame(
 
 #-- Save submission
 fwrite(sub_df, 
-       paste0("./submissions/file2.2_H2O_AUTOML_n_models_", max_model, ".csv"),
+       paste0("./submissions/file2.2_H2O_AUTOML_n_models_", max_models, ".csv"),
        nThread = 3
 )
 

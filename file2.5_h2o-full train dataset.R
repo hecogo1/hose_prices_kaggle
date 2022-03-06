@@ -235,7 +235,7 @@ datGdImpTest %<>% mutate_if(is.character, as.factor)
 
 ## H2o Variables for csv name
 
-max_models <- 100
+max_models <- 200
 
 
 ## ---------------H2o----------------------
@@ -320,7 +320,7 @@ sub_df <- data.frame(
 
 #-- Save submission
 fwrite(sub_df, 
-       paste0("./submissions/file2.2_H2O_AUTOML_n_models_", max_models, ".csv"),
+       paste0("./submissions/file2.2_H2O_AUTOML_n_models_full-train", max_models, ".csv"),
        nThread = 3
 )
 
